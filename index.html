@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目导航</title>
+<style>
+  :root {
+    --bg: #faf7f5;
+    --card: #fff;
+    --text: #2d2422;
+    --text-secondary: #8c7a75;
+    --primary: #c9463d;
+    --border: #f0e8e5;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container { max-width: 600px; margin: 0 auto; }
+  h1 {
+    font-size: 28px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 32px; font-size: 15px;
+  }
+  .project-list {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .project-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    text-decoration: none; color: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .project-info h3 { font-size: 17px; margin-bottom: 4px; }
+  .project-info p { font-size: 13px; color: var(--text-secondary); }
+  .arrow { color: var(--primary); font-size: 20px; }
+  .empty { text-align: center; color: var(--text-secondary); padding: 60px 0; }
+  .add-hint {
+    margin-top: 32px; padding: 20px;
+    background: var(--card); border-radius: var(--radius);
+    border: 2px dashed var(--border); text-align: center;
+    color: var(--text-secondary); font-size: 14px;
+  }
+  .add-hint code {
+    background: #f5f0ee; padding: 2px 8px;
+    border-radius: 4px; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>项目导航</h1>
+  <p class="subtitle">所有已部署的项目入口</p>
+  <div class="project-list">
+    <a class="project-card" href="fund-collection/">
+      <div class="project-info">
+        <h3>资金归集</h3>
+        <p>移动端资金归集计划管理工具</p>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+  <div class="add-hint">
+    添加新项目：在 <code>git-bushu/</code> 下新建目录，放入 <code>index.html</code>，<br>然后在此页面添加一个链接卡片即可。
+  </div>
+</div>
+</body>
+</html>
