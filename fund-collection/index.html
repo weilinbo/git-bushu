@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>资金归集</title>
+<style>
+:root {
+  --primary: #c9463d;
+  --primary-dark: #a8372f;
+  --primary-light: #fef0ee;
+  --primary-soft: #fff5f4;
+  --success: #16b864;
+  --warning: #e8a838;
+  --danger: #c9463d;
+  --bg: #faf7f5;
+  --card: #fff;
+  --text: #2d2422;
+  --text-secondary: #8c7a75;
+  --text-light: #b8a7a2;
+  --border: #f0e8e5;
+  --radius: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+  background: #ede7e4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.phone-frame {
+  width: 375px; height: 812px;
+  background: var(--bg);
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 2px #2d2422;
+}
+
+/* Status Bar */
+.status-bar {
+  height: 40px; background: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; font-size: 12px; font-weight: 600; color: var(--text);
+}
+
+/* Navigation Bar */
+.nav-bar {
+  height: 44px; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 16px; position: relative;
+  border-bottom: 0.5px solid var(--border);
+}
+.nav-back {
+  position: absolute; left: 12px;
+  font-size: 18px; cursor: pointer; color: var(--text);
+  background: none; border: none; padding: 6px;
+}
+.nav-title { font-size: 17px; font-weight: 600; color: var(--text); }
+.nav-records {
+  position: absolute; right: 12px;
+  font-size: 13px; color: var(--primary); font-weight: 600;
+  background: var(--primary-soft); border: none;
+  padding: 5px 12px; border-radius: 14px; cursor: pointer;
+  font-family: inherit;
+}
+.nav-step {
+  position: absolute; right: 16px;
+  font-size: 12px; color: var(--text-light);
+  background: #f5f0ee; padding: 3px 10px; border-radius: 10px;
+}
+
+/* Tab Bar */
+.tab-bar {
+  display: flex; background: #fff;
+  padding: 4px; margin: 10px 16px 0;
+  border-radius: 10px; gap: 4px;
+}
+.tab-item {
+  flex: 1; text-align: center; padding: 9px 0;
+  font-size: 14px; font-weight: 600; color: var(--text-secondary);
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  font-family: inherit; border: none; background: none;
+}
+.tab-item.active {
+  background: var(--primary); color: #fff;
+  box-shadow: 0 2px 6px rgba(201,70,61,0.25);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ========== SINGLE TRANSFER ========== */
+.transfer-from-label {
+  font-size: 11px; font-weight: 600; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 8px;
+}
+.transfer-card-list {
+  background: var(--card); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.transfer-card-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; cursor: pointer; transition: background 0.15s;
+}
+.transfer-card-item + .transfer-card-item { border-top: 1px solid #faf5f4; }
+.transfer-card-item:active { background: #fefaf9; }
+.transfer-card-radio {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid #d5cecb; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.transfer-card-item.selected .transfer-card-radio {
+  border-color: var(--primary); background: var(--primary);
+}
+.transfer-card-radio::after {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; transform: scale(0); transition: transform 0.2s;
+}
+.transfer-card-item.selected .transfer-card-radio::after { transform: scale(1); }
+.transfer-card-info { flex: 1; min-width: 0; }
+.transfer-card-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.transfer-card-no { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.transfer-card-bank-tag {
+  font-size: 10px; margin-left: 8px; padding: 2px 7px; border-radius: 8px;
+  font-weight: 500;
+}
+.tag-other { background: #eafaf2; color: #0f7a42; }
+.tag-self { background: var(--primary-soft); color: var(--primary); }
+.tag-unsigned { background: #fef6e8; color: #966d1f; }
+
+.transfer-target-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm);
+}
+.transfer-target-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--primary-soft); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.transfer-target-info { flex: 1; }
+.transfer-target-label { font-size: 11px; color: var(--text-light); }
+.transfer-target-name { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 1px; }
+.transfer-arrow-icon {
+  font-size: 20px; color: var(--primary); font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ========== 日日盈引导卡 ========== */
+.daily-card {
+  background: linear-gradient(135deg, #fffbf0, #fff8e8);
+  border: 1px solid #f0e0b8;
+  border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 12px;
+  transition: all 0.25s;
+}
+.daily-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.daily-card-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.daily-card-icon {
+  width: 36px; height: 36px; border-radius: 18px;
+  background: linear-gradient(135deg, #f5d77a, #e8b730);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.daily-card-text { flex: 1; min-width: 0; }
+.daily-card-title { font-size: 14px; font-weight: 700; color: #8b6914; }
+.daily-card-sub { font-size: 11px; color: #b8953a; margin-top: 2px; }
+
+/* Toggle Switch */
+.toggle-switch {
+  width: 48px; height: 28px; border-radius: 14px;
+  background: #e0d8d5; flex-shrink: 0; cursor: pointer;
+  position: relative; transition: background 0.25s;
+}
+.toggle-switch.on { background: #e8b730; }
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.25s;
+}
+.toggle-switch.on::after { transform: translateX(20px); }
+
+.daily-card-extra {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease, margin-top 0.3s ease, opacity 0.25s;
+  opacity: 0;
+}
+.daily-card-extra.show {
+  max-height: 50px; margin-top: 10px; opacity: 1;
+}
+.daily-extra-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: #8b6914; padding: 8px 10px;
+  background: rgba(255,255,255,0.6); border-radius: 8px;
+}
+.daily-extra-row span:last-child { font-weight: 700; }
+
+/* Flow diagram bubble */
+.flow-bubble {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(4px);
+  white-space: nowrap; background: linear-gradient(135deg, #fffbf0, #fff8e8);
+  border: 1px solid #f0e0b8; border-radius: 12px;
+  padding: 5px 12px; font-size: 11px; font-weight: 600; color: #8b6914;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  z-index: 2;
+}
+.flow-bubble.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
+.transfer-fee-notice {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--success);
+  background: #eafaf2; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 12px;
+}
+
+/* Flow Diagram */
+.transfer-flow-diagram {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 18px 12px 16px;
+}
+.flow-bank-node {
+  display: flex; flex-direction: column; align-items: center;
+  width: 110px; position: relative;
+}
+.flow-bank-avatar {
+  width: 48px; height: 48px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.10);
+  margin-bottom: 8px;
+}
+.flow-bank-label {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  text-align: center;
+}
+.flow-bank-sub {
+  font-size: 11px; color: var(--text-light);
+  text-align: center; margin-top: 2px;
+}
+.flow-arrow-area {
+  width: 72px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding-bottom: 24px;
+}
+.flow-arrow-icon {
+  font-size: 22px; color: var(--primary);
+  font-weight: 500;
+}
+
+/* Agreement */
+.agreement-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 4px; margin-bottom: 12px;
+  cursor: pointer;
+}
+.agreement-check {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #d5cecb; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.agreement-check.checked {
+  border-color: var(--primary); background: var(--primary);
+}
+.agreement-check::after {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; transform: scale(0); transition: transform 0.2s;
+}
+.agreement-check.checked::after { transform: scale(1); }
+.agreement-text { font-size: 13px; color: var(--text-secondary); }
+.agreement-link { color: var(--primary); font-weight: 500; }
+
+.transfer-result-amount {
+  font-size: 36px; font-weight: 700; color: var(--primary);
+  text-align: center; margin: 12px 0 4px;
+}
+.transfer-result-status {
+  text-align: center; font-size: 14px; color: var(--success);
+  font-weight: 600; margin-bottom: 16px;
+}
+.result-oneliner {
+  text-align: center; font-size: 13px; color: var(--text-secondary);
+  line-height: 1.6; padding: 0 20px; margin-bottom: 16px;
+}
+.result-balance {
+  text-align: center; font-size: 13px; color: var(--text-secondary);
+  background: var(--card); border-radius: 20px;
+  display: inline-block; padding: 8px 20px;
+  margin: 0 auto;
+}
+
+/* Content */
+.screen {
+  height: calc(812px - 40px - 44px);
+  overflow-y: auto; padding: 14px 16px;
+  display: none;
+  -webkit-overflow-scrolling: touch;
+}
+.screen.active { display: block; }
+.screen::-webkit-scrollbar { display: none; }
+
+/* ========== PLAN LIST ========== */
+.section-title {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; margin-top: 6px;
+}
+.section-label { font-size: 14px; font-weight: 700; color: var(--text); }
+.section-count { font-size: 11px; color: var(--text-light); }
+
+.plan-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.plan-card:active { transform: scale(0.985); }
+.plan-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.plan-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.plan-status {
+  font-size: 10px; padding: 3px 10px; border-radius: 10px; font-weight: 600;
+  flex-shrink: 0; margin-left: 8px;
+}
+.status-active { background: #eafaf2; color: #0f7a42; }
+.status-paused { background: #fef6e8; color: #966d1f; }
+
+.plan-flow-line {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;
+}
+.flow-bank { font-weight: 600; color: var(--text); }
+.flow-card-no { color: var(--text-light); font-size: 11px; margin-left: 2px; }
+.flow-arrow { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+
+.plan-pool-amount {
+  font-size: 22px; font-weight: 700; color: var(--primary);
+  margin-bottom: 8px;
+}
+.plan-pool-label { font-size: 11px; color: var(--text-light); margin-bottom: 1px; }
+
+.plan-rule-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--text-light);
+}
+.rule-dot { width: 3px; height: 3px; border-radius: 50%; background: #ddd; }
+
+/* Bottom Button */
+.bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 12px 16px 14px;
+  background: linear-gradient(transparent, var(--bg) 30%, var(--bg));
+}
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 14px; border-radius: 25px; font-size: 16px; font-weight: 700;
+  border: none; cursor: pointer; transition: all 0.15s;
+  width: 100%; font-family: inherit; letter-spacing: 0.5px;
+}
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn-primary {
+  background: linear-gradient(135deg, #d44b41, #c0392b);
+  color: #fff; box-shadow: 0 4px 14px rgba(201,70,61,0.3);
+}
+.btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-danger { background: #fff; color: var(--danger); border: 1.5px solid #f0d0cc; }
+.btn-sm { padding: 10px 18px; font-size: 14px; width: auto; border-radius: 20px; }
+
+.empty-state {
+  text-align: center; padding: 70px 40px;
+}
+.empty-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--primary-soft); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; margin: 0 auto 16px;
+}
+.empty-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.empty-desc { font-size: 13px; color: var(--text-light); line-height: 1.5; }
+
+/* ========== CREATE STEP 1 ========== */
+.form-group {
+  background: var(--card); border-radius: var(--radius);
+  margin-bottom: 12px; box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Plan name input */
+.name-input-area {
+  padding: 14px 16px; cursor: pointer;
+}
+.name-input-area .label {
+  font-size: 11px; font-weight: 600; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.name-input-area input {
+  width: 100%; border: none; background: transparent;
+  font-size: 17px; font-weight: 700; color: var(--text);
+  outline: none; font-family: inherit;
+  padding: 0; caret-color: var(--primary);
+}
+.name-input-area input::placeholder { color: #d0c8c5; }
+
+/* Collapsible section */
+.collapse-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; cursor: pointer;
+  transition: background 0.15s;
+  border-top: 1px solid var(--border);
+}
+.collapse-header:active { background: #fdfbfa; }
+.collapse-header-left { display: flex; align-items: center; gap: 10px; }
+.collapse-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.collapse-icon.pay { background: #fef0ee; color: var(--primary); }
+.collapse-icon.recv { background: #eafaf2; color: var(--success); }
+.collapse-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.collapse-summary {
+  font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+}
+.collapse-arrow {
+  font-size: 12px; color: var(--text-light); transition: transform 0.25s;
+}
+.collapse-header.open .collapse-arrow { transform: rotate(180deg); }
+
+.collapse-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+.collapse-body.open { max-height: 400px; }
+
+.account-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+  transition: background 0.15s;
+  border-top: 1px solid #faf5f4;
+}
+.account-option:active { background: #fefaf9; }
+.account-radio {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid #d5cecb; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.account-option.selected .account-radio {
+  border-color: var(--primary); background: var(--primary);
+}
+.account-radio-inner {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; transform: scale(0); transition: transform 0.2s;
+}
+.account-option.selected .account-radio-inner { transform: scale(1); }
+.account-opt-info { flex: 1; }
+.account-opt-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.account-opt-no { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.account-opt-right { text-align: right; }
+.account-opt-balance { font-size: 15px; font-weight: 700; color: var(--text); }
+.account-opt-tag { font-size: 10px; color: var(--text-light); }
+.selected-check {
+  color: var(--primary); font-size: 16px; font-weight: 700;
+  opacity: 0; transition: opacity 0.2s;
+}
+.account-option.selected .selected-check { opacity: 1; }
+
+/* ========== CREATE STEP 2 ========== */
+.step2-plan-name {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card); border-radius: var(--radius);
+  margin-bottom: 12px; cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.step2-plan-name-left .label {
+  font-size: 10px; color: var(--text-light); letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.step2-plan-name-left .val { font-size: 16px; font-weight: 700; color: var(--text); }
+.step2-plan-name .edit-hint { color: var(--primary); font-size: 13px; font-weight: 500; }
+
+.rule-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm);
+}
+.rule-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+
+.pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  padding: 10px 16px; border-radius: 22px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--border); background: #fff;
+  color: var(--text-secondary); transition: all 0.2s;
+}
+.pill.selected {
+  background: var(--primary-soft); border-color: var(--primary);
+  color: var(--primary);
+}
+
+.extra-input { margin-top: 10px; }
+.input-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+}
+.input {
+  flex: 1; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-size: 15px; outline: none; font-family: inherit;
+  color: var(--text); background: #fdfbfa;
+  transition: border-color 0.2s;
+}
+.input:focus { border-color: var(--primary); background: #fff; }
+
+.slider {
+  width: 100%; -webkit-appearance: none;
+  height: 6px; border-radius: 3px; background: #f0e8e5; outline: none;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--primary); cursor: pointer;
+  box-shadow: 0 2px 8px rgba(201,70,61,0.3);
+}
+
+/* Bank flow header */
+.flow-header {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 16px 4px; margin-bottom: 8px;
+}
+.flow-bank-card {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border-radius: 14px;
+  padding: 12px 12px; box-shadow: var(--shadow-sm);
+  flex: 1 1 0; min-width: 0;
+}
+.bank-logo {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  background: #d44037; flex-shrink: 0;
+}
+.flow-bank-info { flex: 1; min-width: 0; }
+.flow-bank-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.flow-bank-no { font-size: 10px; color: var(--text-light); margin-top: 1px; }
+.flow-arrow-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 6px; flex-shrink: 0;
+}
+.flow-arrow-icon {
+  font-size: 18px; color: var(--primary); font-weight: 700;
+}
+.flow-tag {
+  font-size: 10px; color: var(--primary); margin-top: 4px;
+  background: var(--primary-soft); padding: 2px 8px; border-radius: 8px;
+  white-space: nowrap; font-weight: 500;
+}
+
+/* Amount card */
+.amount-card {
+  background: linear-gradient(135deg, #fef5f4, #fff8f7);
+  border-radius: var(--radius); padding: 18px 20px;
+  margin-bottom: 12px;
+  border: 2px solid #fae8e5;
+  transition: border-color 0.2s;
+}
+.amount-card:focus-within {
+  border-color: var(--primary);
+}
+.amount-label {
+  font-size: 12px; color: var(--text-light); margin-bottom: 8px;
+  font-weight: 600; letter-spacing: 0.5px;
+}
+.amount-input-row {
+  display: flex; align-items: center; gap: 6px;
+}
+.amount-unit {
+  font-size: 36px; font-weight: 300; color: var(--primary);
+  line-height: 1;
+}
+.amount-input {
+  width: 160px; border: none; background: transparent;
+  font-size: 40px; font-weight: 700; color: var(--primary);
+  outline: none; font-family: inherit; text-align: left;
+  caret-color: var(--primary); line-height: 1;
+}
+.amount-input::placeholder { color: #e8d0cc; }
+.amount-hint {
+  font-size: 11px; color: var(--text-light); margin-top: 6px;
+}
+
+/* Mode Options (inside collapse-body) */
+.mode-options { padding: 0 4px 4px; }
+.mode-option {
+  padding: 14px 16px; border-radius: 12px;
+  border: 1.5px solid var(--border);
+  margin: 0 12px 8px; cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-option:last-child { margin-bottom: 4px; }
+.mode-option:active { transform: scale(0.985); }
+.mode-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.mode-option.disabled {
+  opacity: 0.4; pointer-events: none;
+}
+.mode-option-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.mode-option-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+.restrict-notice {
+  font-size: 12px; color: #966d1f;
+  background: #fef6e8; border-radius: 8px;
+  padding: 8px 12px; margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.summary-block {
+  background: linear-gradient(135deg, #fef5f4, #fff8f7);
+  border-radius: var(--radius); padding: 16px;
+  text-align: center; margin-bottom: 12px;
+  border: 1px solid #fae8e5;
+}
+.summary-block .label { font-size: 12px; color: var(--text-light); }
+.summary-block .detail {
+  font-size: 13px; color: var(--text-secondary); margin-top: 6px;
+  line-height: 1.6;
+}
+
+/* ========== RESULT ========== */
+.result-content {
+  text-align: center; padding: 40px 24px 24px;
+}
+.result-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #eafaf2; color: var(--success);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 700;
+  margin: 0 auto 16px;
+}
+.result-title {
+  font-size: 20px; font-weight: 700; color: var(--text);
+  margin-bottom: 6px;
+}
+.result-desc {
+  font-size: 13px; color: var(--text-light); margin-bottom: 24px;
+}
+.result-summary {
+  background: var(--card); border-radius: var(--radius);
+  padding: 4px 0; text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+.result-flow {
+  padding: 14px 16px; text-align: center;
+  font-size: 15px; font-weight: 700; color: var(--primary);
+  border-bottom: 1px solid #faf5f4;
+}
+.result-detail-row {
+  display: flex; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #faf5f4;
+  font-size: 14px;
+}
+.result-detail-row:last-child { border-bottom: none; }
+.result-detail-row span:first-child { color: var(--text-secondary); }
+.result-detail-row span:last-child { font-weight: 600; color: var(--text); }
+
+/* ========== RECORDS ========== */
+.records-stats {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px 8px; margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-item { flex: 1; text-align: center; }
+.stat-val { font-size: 17px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.stat-divider { width: 1px; height: 28px; background: var(--border); }
+
+.records-date-group { margin-bottom: 14px; }
+.records-date {
+  font-size: 12px; color: var(--text-light); font-weight: 600;
+  margin-bottom: 8px; padding-left: 2px;
+}
+.record-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card); border-radius: 12px;
+  padding: 14px 14px; margin-bottom: 6px;
+  box-shadow: var(--shadow-sm);
+}
+.record-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.record-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.record-icon.success { background: #eafaf2; color: #16b864; }
+.record-icon.pending { background: #fef6e8; color: #e8a838; }
+.record-icon.fail { background: #fef0ee; color: #c9463d; }
+.record-info { flex: 1; min-width: 0; }
+.record-flow { font-size: 13px; font-weight: 600; color: var(--text); }
+.record-arrow { color: var(--primary); font-weight: 700; margin: 0 2px; }
+.record-plan { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.record-right { text-align: right; flex-shrink: 0; margin-left: 8px; }
+.record-amount { font-size: 15px; font-weight: 700; color: var(--text); }
+.record-status { font-size: 11px; font-weight: 600; margin-top: 2px; }
+.record-status.status-success { color: #16b864; }
+.record-status.status-pending { color: #e8a838; }
+.record-status.status-fail { color: #c9463d; }
+
+/* ========== DETAIL ========== */
+.detail-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.detail-name { font-size: 18px; font-weight: 700; color: var(--text); }
+.detail-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 4px 0; margin-bottom: 12px; box-shadow: var(--shadow-sm);
+}
+.detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px;
+  border-bottom: 1px solid #faf5f4;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-key { font-size: 14px; color: var(--text-secondary); }
+.detail-val { font-size: 14px; font-weight: 600; color: var(--text); }
+.detail-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+/* ========== MODAL ========== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100; animation: fadeIn 0.2s;
+}
+.modal-sheet {
+  background: #fff; border-radius: 20px 20px 0 0;
+  padding: 20px; width: 375px; max-width: 100vw;
+  animation: slideUp 0.3s ease;
+}
+.modal-handle {
+  width: 36px; height: 4px; background: #e0d8d5;
+  border-radius: 2px; margin: 0 auto 16px;
+}
+.modal-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 8px; color: var(--text); }
+.modal-desc { font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; }
+
+/* Toast */
+.toast {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  padding: 12px 24px; border-radius: 25px;
+  font-size: 14px; font-weight: 600; z-index: 200;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+}
+.toast-success { background: #16b864; color: #fff; }
+.toast-error { background: #c9463d; color: #fff; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+.hidden { display: none !important; }
+
+@media (max-width: 400px) {
+  .phone-frame { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+  .screen { height: calc(100vh - 40px - 44px); }
+  .modal-sheet { width: 100vw; }
+}
+</style>
+</head>
+<body>
+
+<div class="phone-frame" id="phoneFrame">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span style="font-weight:700">9:41</span>
+    <span style="font-size:11px">5G ▮▮▮▮ 🔋</span>
+  </div>
+
+  <!-- ==================== SCREEN: MAIN (他行入金) ==================== -->
+  <div class="screen active" id="screen-list">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="history.back()">‹</button>
+      <span class="nav-title">他行入金</span>
+      <button class="nav-records" onclick="goScreen('records')">记录</button>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <button class="tab-item active" data-tab="single" onclick="switchTab('single')">单笔转入</button>
+      <button class="tab-item" data-tab="pool" onclick="switchTab('pool')">资金归集</button>
+    </div>
+
+    <!-- ===== TAB: 单笔转入 ===== -->
+    <div class="tab-panel active" id="tab-single">
+      <!-- 转入图示 -->
+      <div class="transfer-flow-diagram" id="transferFlowDiagram">
+        <div class="flow-bank-node">
+          <div class="flow-bank-avatar" id="flowSrcLogo" style="background:#d44037">招</div>
+          <div class="flow-bank-label" id="flowSrcName">招商银行</div>
+          <div class="flow-bank-sub" id="flowSrcNo">储蓄卡 ****1234</div>
+        </div>
+        <div class="flow-arrow-area">
+          <span class="flow-arrow-icon">→</span>
+        </div>
+        <div class="flow-bank-node">
+          <div class="flow-bank-avatar" id="flowTgtLogo" style="background:#c9463d">花</div>
+          <div class="flow-bank-label" id="flowTgtName">花花银行</div>
+          <div class="flow-bank-sub" id="flowTgtNo">6222 **** 8899</div>
+          <div class="flow-bubble" id="flowBubble">💰 自动申购日日盈</div>
+        </div>
+      </div>
+
+      <!-- 收款卡（本行卡）- 可折叠 -->
+      <div class="form-group">
+        <div class="collapse-header" id="singleTargetHeader" onclick="toggleCollapse('singleTarget')">
+          <div class="collapse-header-left">
+            <div class="collapse-icon recv">📥</div>
+            <div>
+              <div class="collapse-label">收款卡</div>
+              <div class="collapse-summary" id="singleTargetSummary">花花银行 6222 **** 8899</div>
+            </div>
+          </div>
+          <span class="collapse-arrow">▾</span>
+        </div>
+        <div class="collapse-body" id="singleTargetBody">
+          <div id="singleTargetList">
+            <div class="account-option selected" data-id="main" data-name="花花银行" data-no="6222 **** 8899" data-balance="¥158,320.50" onclick="selectSingleTarget(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">花花银行</div>
+                <div class="account-opt-no">6222 **** 8899</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-balance">¥158,320.50</div>
+                <div class="account-opt-tag">当前余额</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+            <div class="account-option" data-id="main2" data-name="花花银行" data-no="6222 **** 5566" data-balance="¥52,100.00" onclick="selectSingleTarget(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">花花银行</div>
+                <div class="account-opt-no">6222 **** 5566</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-balance">¥52,100.00</div>
+                <div class="account-opt-tag">当前余额</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日日盈引导 -->
+      <div class="daily-card" id="dailyCard">
+        <div class="daily-card-header" onclick="toggleDaily()">
+          <div class="daily-card-left">
+            <div class="daily-card-icon">💰</div>
+            <div class="daily-card-text">
+              <div class="daily-card-title">自动转入日日盈</div>
+              <div class="daily-card-sub">转入资金自动赚收益，随时可花</div>
+            </div>
+          </div>
+          <div class="toggle-switch" id="dailyToggle"></div>
+        </div>
+        <div class="daily-card-extra" id="dailyExtra">
+          <div class="daily-extra-row">
+            <span>近7日年化</span><span>2.5%</span>
+          </div>
+          <div class="daily-extra-row" style="margin-top:4px">
+            <span>1分起购 · 灵活申赎 · 日日计息</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 付款卡（他行卡）- 可折叠 -->
+      <div class="form-group">
+        <div class="collapse-header" id="singleSourceHeader" onclick="toggleCollapse('singleSource')">
+          <div class="collapse-header-left">
+            <div class="collapse-icon pay">💳</div>
+            <div>
+              <div class="collapse-label">付款卡</div>
+              <div class="collapse-summary" id="singleSourceSummary">招商银行 储蓄卡 ****1234</div>
+            </div>
+          </div>
+          <span class="collapse-arrow">▾</span>
+        </div>
+        <div class="collapse-body" id="singleSourceBody">
+          <div id="singleSourceList">
+            <div class="account-option selected" data-id="cmb" data-name="招商银行" data-no="储蓄卡 6217 **** 1234" data-bank="other" data-signed="true" onclick="selectSingleSource(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">招商银行</div>
+                <div class="account-opt-no">储蓄卡 6217 **** 1234</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-tag" style="color:#16b864;font-weight:500">✓ 已签约</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+            <div class="account-option" data-id="icbc" data-name="工商银行" data-no="理财卡 6217 **** 9012" data-bank="other" data-signed="true" onclick="selectSingleSource(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">工商银行</div>
+                <div class="account-opt-no">理财卡 6217 **** 9012</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-tag" style="color:#16b864;font-weight:500">✓ 已签约</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+            <div class="account-option" data-id="pingan" data-name="平安银行" data-no="借记卡 6217 **** 5678" data-bank="other" data-signed="false" onclick="selectSingleSource(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">平安银行</div>
+                <div class="account-opt-no">借记卡 6217 **** 5678</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-tag" style="color:#e8a838;font-weight:500">未签约</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+            <div class="account-option" data-id="self" data-name="花花银行" data-no="借记卡 6217 **** 3456" data-bank="self" data-signed="true" onclick="selectSingleSource(this)">
+              <div class="account-radio"><div class="account-radio-inner"></div></div>
+              <div class="account-opt-info">
+                <div class="account-opt-name">花花银行</div>
+                <div class="account-opt-no">借记卡 6217 **** 3456</div>
+              </div>
+              <div class="account-opt-right">
+                <div class="account-opt-tag" style="color:#c9463d;font-weight:500">本行卡</div>
+              </div>
+              <span class="selected-check">✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 金额输入 -->
+      <div class="amount-card" style="margin-top:4px">
+        <div class="amount-label">转入金额</div>
+        <div class="amount-input-row">
+          <span class="amount-unit">¥</span>
+          <input class="amount-input" id="singleAmount" type="number" placeholder="0" value="" oninput="updateSingleAmount()">
+        </div>
+        <div class="amount-hint" id="singleAmountHint">单笔限额 ¥50,000 · 每日限额 ¥200,000</div>
+      </div>
+
+      <!-- 手续费提示 -->
+      <div class="transfer-fee-notice" id="feeNotice">
+        <span>✓</span> 推广期内跨行转入免手续费，资金实时到账
+      </div>
+
+      <!-- 协议勾选 -->
+      <div class="agreement-row" onclick="toggleAgreement()">
+        <div class="agreement-check" id="agreementCheck"></div>
+        <span class="agreement-text">本人已阅读并同意<span class="agreement-link">《跨行收款协议》</span></span>
+      </div>
+      <div class="agreement-row hidden" id="dailyAgreementRow" onclick="toggleDailyAgreement()">
+        <div class="agreement-check" id="dailyAgreementCheck"></div>
+        <span class="agreement-text">本人已阅读并同意<span class="agreement-link">《日日盈服务协议》</span></span>
+      </div>
+
+      <button class="btn btn-primary" id="btnSingleConfirm" onclick="confirmSingleTransfer()">确认转入</button>
+      <div style="height:16px"></div>
+    </div>
+
+    <!-- ===== TAB: 资金归集 ===== -->
+    <div class="tab-panel" id="tab-pool">
+    <!-- 执行中 -->
+    <div class="section-title">
+      <span class="section-label">执行中</span>
+      <span class="section-count" id="activeCount">2个计划</span>
+    </div>
+    <div id="activePlans">
+      <div class="plan-card" data-plan-id="plan1" onclick="openDetail('plan1')">
+        <div class="plan-top">
+          <span class="plan-name">日常资金归集</span>
+          <span class="plan-status status-active">执行中</span>
+        </div>
+        <div class="plan-flow-line">
+          <span class="flow-bank">招商银行</span><span class="flow-card-no">储蓄卡 ****1234</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-bank">花花银行</span><span class="flow-card-no">****8899</span>
+        </div>
+        <div class="plan-pool-label">上次归集金额</div>
+        <div class="plan-pool-amount">¥23,500.00</div>
+        <div class="plan-rule-row">
+          <span>全额归集</span><span class="rule-dot"></span>
+          <span>每日</span><span class="rule-dot"></span>
+          <span>05/26 执行</span>
+        </div>
+      </div>
+
+      <div class="plan-card" data-plan-id="plan2" onclick="openDetail('plan2')">
+        <div class="plan-top">
+          <span class="plan-name">理财资金归集</span>
+          <span class="plan-status status-active">执行中</span>
+        </div>
+        <div class="plan-flow-line">
+          <span class="flow-bank">工商银行</span><span class="flow-card-no">理财卡 ****9012</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-bank">花花银行</span><span class="flow-card-no">****8899</span>
+        </div>
+        <div class="plan-pool-label">上次归集金额</div>
+        <div class="plan-pool-amount">¥44,000.00</div>
+        <div class="plan-rule-row">
+          <span>定额归集 ¥1,000</span><span class="rule-dot"></span>
+          <span>每周 周一</span><span class="rule-dot"></span>
+          <span>05/25 执行</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已暂停 -->
+    <div class="section-title" style="margin-top:20px">
+      <span class="section-label">已暂停</span>
+      <span class="section-count" id="pausedCount">1个计划</span>
+    </div>
+    <div id="pausedPlans">
+      <div class="plan-card" data-plan-id="plan3" style="opacity:0.6" onclick="openDetail('plan3')">
+        <div class="plan-top">
+          <span class="plan-name">月底集中归集</span>
+          <span class="plan-status status-paused">已暂停</span>
+        </div>
+        <div class="plan-flow-line">
+          <span class="flow-bank">平安银行</span><span class="flow-card-no">借记卡 ****5678</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-bank">花花银行</span><span class="flow-card-no">****8899</span>
+        </div>
+        <div class="plan-pool-label">上次归集金额</div>
+        <div class="plan-pool-amount">¥8,920.00</div>
+        <div class="plan-rule-row">
+          <span>全额归集</span><span class="rule-dot"></span>
+          <span>每月 28日</span><span class="rule-dot"></span>
+          <span>暂停于 04/15</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div class="empty-state hidden" id="emptyState">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">暂无归集计划</div>
+      <div class="empty-desc">创建归集计划，将付款卡资金<br>自动归集到收款卡</div>
+      <button class="btn btn-primary" style="margin-top:20px;width:auto;padding:14px 40px" onclick="goCreate()">添加计划</button>
+    </div>
+
+    <div class="bottom-bar" id="addBtnArea">
+      <button class="btn btn-primary" onclick="goCreate()">＋ 添加计划</button>
+    </div>
+    </div><!-- end tab-pool -->
+
+    <!-- 单笔转入结果 -->
+    <div class="tab-panel" id="tab-single-result" style="padding-top:8px">
+      <div class="result-content" style="padding-top:30px">
+        <div class="result-icon" id="singleResultIcon">✓</div>
+        <div class="result-title" id="singleResultTitle">转入成功</div>
+        <div class="result-oneliner" id="singleResultOneliner">
+          招商银行 ****1234 → 花花银行 ****8899 · 免手续费 · 实时到账
+        </div>
+        <div class="result-balance" id="singleResultBalance">
+          花花银行卡余额 ¥158,320.50
+        </div>
+      </div>
+      <div class="result-btns" style="padding:0 16px;margin-top:20px;display:flex;gap:10px">
+        <button class="btn btn-primary hidden" id="btnViewDaily" onclick="goBackFromResult()" style="flex:1">查看日日盈</button>
+        <button class="btn btn-outline" id="btnSingleAgain" onclick="goBackFromResult()" style="flex:1">继续转入</button>
+        <button class="btn btn-primary" id="btnSingleDone" onclick="goBackFromResult()" style="flex:1">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: CREATE STEP 1 ==================== -->
+  <div class="screen" id="screen-create-step1">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="goScreen('list')">‹</button>
+      <span class="nav-title">新建归集计划</span>
+      <span class="nav-step">1/2</span>
+    </div>
+
+    <!-- 计划名称 -->
+    <div class="form-group name-input-area" onclick="document.getElementById('planNameInput').focus()">
+      <div class="label">归集计划名称</div>
+      <input id="planNameInput" type="text" placeholder="点击设置归集名称" value="我的归集计划">
+    </div>
+
+    <!-- 归集周期 -->
+    <div class="form-group" style="padding:14px 16px">
+      <div class="form-label" style="margin-bottom:10px">归集周期</div>
+      <div class="pill-row" id="cycleGroupStep1">
+        <span class="pill selected" data-cycle="daily" onclick="selectCycle1('daily')">每日</span>
+        <span class="pill" data-cycle="weekly" onclick="selectCycle1('weekly')">每周</span>
+        <span class="pill" data-cycle="monthly" onclick="selectCycle1('monthly')">每月</span>
+        <span class="pill" data-cycle="specific" onclick="selectCycle1('specific')">指定日期</span>
+      </div>
+      <div class="extra-input hidden" id="weekdayInput1" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">执行日</span>
+          <select class="input" id="cycleWeekday1" style="flex:1">
+            <option>周一</option><option>周二</option><option>周三</option>
+            <option>周四</option><option>周五</option><option>周六</option><option>周日</option>
+          </select>
+        </div>
+      </div>
+      <div class="extra-input hidden" id="monthDayInput1" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">执行日</span>
+          <select class="input" id="cycleMonthDay1" style="flex:1">
+            <option>1日</option><option>5日</option><option>10日</option><option>15日</option>
+            <option>20日</option><option>25日</option><option selected>28日</option>
+          </select>
+        </div>
+      </div>
+      <div class="extra-input hidden" id="specificInput1" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">指定日期</span>
+          <input class="input" type="date" id="cycleSpecific1" style="flex:1">
+        </div>
+      </div>
+    </div>
+
+    <!-- 收款卡 - 可折叠（本行卡） -->
+    <div class="form-group">
+      <div class="collapse-header" id="targetHeader" onclick="toggleCollapse('target')">
+        <div class="collapse-header-left">
+          <div class="collapse-icon recv">🏦</div>
+          <div>
+            <div class="collapse-label">收款卡</div>
+            <div class="collapse-summary" id="targetSummary">花花银行 6222 **** 8899</div>
+          </div>
+        </div>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="collapse-body" id="targetBody">
+        <div id="targetAccountList">
+          <div class="account-option selected" data-id="main" onclick="selectTarget(this, '花花银行', '6222 **** 8899')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">花花银行</div>
+              <div class="account-opt-no">6222 **** 8899</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-balance">¥158,320.50</div>
+              <div class="account-opt-tag">当前余额</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+          <div class="account-option" data-id="main2" onclick="selectTarget(this, '花花银行', '6222 **** 5566')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">花花银行</div>
+              <div class="account-opt-no">6222 **** 5566</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-balance">¥52,100.00</div>
+              <div class="account-opt-tag">当前余额</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 付款卡 - 可折叠（本行+他行） -->
+    <div class="form-group">
+      <div class="collapse-header" id="sourceHeader" onclick="toggleCollapse('source')">
+        <div class="collapse-header-left">
+          <div class="collapse-icon pay">💳</div>
+          <div>
+            <div class="collapse-label">付款卡</div>
+            <div class="collapse-summary" id="sourceSummary">花花银行 借记卡 6217 **** 3456</div>
+          </div>
+        </div>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="collapse-body" id="sourceBody">
+        <div id="sourceAccountList">
+          <div class="account-option selected" data-id="0" data-bank="self" onclick="selectSource(this, '花花银行', '借记卡 6217 **** 3456')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">花花银行</div>
+              <div class="account-opt-no">借记卡 6217 **** 3456</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-balance">¥12,800.00</div>
+              <div class="account-opt-tag">本行卡</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+          <div class="account-option" data-id="1" data-bank="other" onclick="selectSource(this, '招商银行', '储蓄卡 6217 **** 1234')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">招商银行</div>
+              <div class="account-opt-no">储蓄卡 6217 **** 1234</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-tag" style="color:#16b864;font-weight:500">✓ 已签约</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+          <div class="account-option" data-id="2" data-bank="other" onclick="selectSource(this, '平安银行', '借记卡 6217 **** 5678')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">平安银行</div>
+              <div class="account-opt-no">借记卡 6217 **** 5678</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-tag" style="color:#e8a838;font-weight:500">未签约</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+          <div class="account-option" data-id="3" data-bank="other" onclick="selectSource(this, '工商银行', '理财卡 6217 **** 9012')">
+            <div class="account-radio"><div class="account-radio-inner"></div></div>
+            <div class="account-opt-info">
+              <div class="account-opt-name">工商银行</div>
+              <div class="account-opt-no">理财卡 6217 **** 9012</div>
+            </div>
+            <div class="account-opt-right">
+              <div class="account-opt-tag" style="color:#16b864;font-weight:500">✓ 已签约</div>
+            </div>
+            <span class="selected-check">✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="goCreateStep2()" style="margin-top:4px">下一步：设置归集模式</button>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- ==================== SCREEN: CREATE STEP 2 ==================== -->
+  <div class="screen" id="screen-create-step2">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="goScreen('create-step1')">‹</button>
+      <span class="nav-title">设置归集规则</span>
+      <span class="nav-step">2/2</span>
+    </div>
+
+    <!-- Bank flow header -->
+    <div class="flow-header">
+      <div class="flow-bank-card" id="flowSourceCard">
+        <div class="bank-logo" id="sourceLogo">招</div>
+        <div class="flow-bank-info">
+          <div class="flow-bank-name" id="flowSourceName">招商银行</div>
+          <div class="flow-bank-no" id="flowSourceNo">储蓄卡 ****1234</div>
+        </div>
+      </div>
+      <div class="flow-arrow-wrap">
+        <div class="flow-arrow-icon">→</div>
+        <div class="flow-tag" id="flowCycleTag">每日</div>
+      </div>
+      <div class="flow-bank-card" id="flowTargetCard">
+        <div class="bank-logo" id="targetLogo" style="background:var(--primary)">花</div>
+        <div class="flow-bank-info">
+          <div class="flow-bank-name" id="flowTargetName">花花银行</div>
+          <div class="flow-bank-no" id="flowTargetNo">****8899</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 归集模式 - collapsible -->
+    <div class="form-group">
+      <div class="restrict-notice hidden" id="restrictNotice">
+        ⓘ 付款卡为他行卡，仅支持定额归集
+      </div>
+      <div class="collapse-header" id="modeHeader" onclick="toggleCollapse('mode')">
+        <div class="collapse-header-left">
+          <div class="collapse-icon" style="background:#fef0ee;color:var(--primary)">💰</div>
+          <div>
+            <div class="collapse-label">归集模式</div>
+            <div class="collapse-summary" id="modeSummary">定额归集</div>
+          </div>
+        </div>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="collapse-body" id="modeBody">
+        <div class="mode-options" id="modeGroup">
+          <div class="mode-option selected" data-mode="fixed" onclick="selectMode('fixed')">
+            <div class="mode-option-title">定额归集</div>
+            <div class="mode-option-desc">每次归集固定金额</div>
+          </div>
+          <div class="mode-option" data-mode="full" onclick="selectMode('full')">
+            <div class="mode-option-title">全额归集</div>
+            <div class="mode-option-desc">将付款卡余额全部归集至收款卡</div>
+          </div>
+          <div class="mode-option" data-mode="balance" onclick="selectMode('balance')">
+            <div class="mode-option-title">定余额归集</div>
+            <div class="mode-option-desc">付款卡留存固定金额，超出部分归集</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 金额填写 -->
+    <div class="amount-card" id="amountCard">
+      <div class="amount-label" id="amountLabel">归集金额</div>
+      <div class="amount-input-row">
+        <span class="amount-unit">¥</span>
+        <input class="amount-input" id="amountInput" type="number" placeholder="0" value="1000" oninput="updateRuleSummary()">
+      </div>
+      <div class="amount-hint" id="amountHint">输入每期归集的固定金额</div>
+    </div>
+
+    <div class="amount-card hidden" id="amountCardHidden" style="text-align:center;padding:24px">
+      <div style="font-size:14px;color:var(--text-secondary)">付款卡余额将全额归集</div>
+    </div>
+
+    <!-- 摘要 -->
+    <div class="summary-block">
+      <div class="label">归集规则摘要</div>
+      <div class="detail" id="ruleSummary">花花银行 → 花花银行<br>定额归集 ¥1,000 · 每日</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="confirmCreate()">确认创建</button>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- ==================== SCREEN: RESULT ==================== -->
+  <div class="screen" id="screen-result">
+    <div class="nav-bar">
+      <span class="nav-title">创建完成</span>
+    </div>
+
+    <div class="result-content">
+      <div class="result-icon">✓</div>
+      <div class="result-title">归集计划创建成功</div>
+      <div class="result-desc">计划已生效，系统将按规则执行资金归集</div>
+
+      <div class="result-summary">
+        <div class="result-flow" id="resultFlow">招商银行 → 花花银行</div>
+        <div class="result-detail-row">
+          <span>计划名称</span>
+          <span id="resultName">我的归集计划</span>
+        </div>
+        <div class="result-detail-row">
+          <span>归集模式</span>
+          <span id="resultMode">定额归集 ¥1,000</span>
+        </div>
+        <div class="result-detail-row">
+          <span>归集周期</span>
+          <span id="resultCycle">每日</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px">
+      <button class="btn btn-primary" onclick="finishCreate()">完成</button>
+      <div style="height:16px"></div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: EDIT PLAN ==================== -->
+  <div class="screen" id="screen-edit">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="goScreen('detail')">‹</button>
+      <span class="nav-title">修改归集计划</span>
+    </div>
+
+    <!-- 计划名称 -->
+    <div class="form-group name-input-area" onclick="document.getElementById('editPlanName').focus()">
+      <div class="label">归集计划名称</div>
+      <input id="editPlanName" type="text" placeholder="点击设置归集名称">
+    </div>
+
+    <!-- 归集周期 -->
+    <div class="form-group" style="padding:14px 16px">
+      <div class="form-label" style="margin-bottom:10px">归集周期</div>
+      <div class="pill-row" id="editCycleGroup">
+        <span class="pill selected" data-cycle="daily" onclick="selectEditCycle('daily')">每日</span>
+        <span class="pill" data-cycle="weekly" onclick="selectEditCycle('weekly')">每周</span>
+        <span class="pill" data-cycle="monthly" onclick="selectEditCycle('monthly')">每月</span>
+        <span class="pill" data-cycle="specific" onclick="selectEditCycle('specific')">指定日期</span>
+      </div>
+      <div class="extra-input hidden" id="editWeekdayInput" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">执行日</span>
+          <select class="input" id="editWeekday" style="flex:1">
+            <option>周一</option><option>周二</option><option>周三</option>
+            <option>周四</option><option>周五</option><option>周六</option><option>周日</option>
+          </select>
+        </div>
+      </div>
+      <div class="extra-input hidden" id="editMonthDayInput" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">执行日</span>
+          <select class="input" id="editMonthDay" style="flex:1">
+            <option>1日</option><option>5日</option><option>10日</option><option>15日</option>
+            <option>20日</option><option>25日</option><option selected>28日</option>
+          </select>
+        </div>
+      </div>
+      <div class="extra-input hidden" id="editSpecificInput" style="margin-top:8px">
+        <div class="input-row">
+          <span style="font-size:13px;color:var(--text-secondary)">指定日期</span>
+          <input class="input" type="date" id="editSpecific" style="flex:1">
+        </div>
+      </div>
+    </div>
+
+    <!-- 归集模式 -->
+    <div class="form-group">
+      <div class="collapse-header" id="editModeHeader" onclick="toggleCollapse('editMode')">
+        <div class="collapse-header-left">
+          <div class="collapse-icon" style="background:#fef0ee;color:var(--primary)">💰</div>
+          <div>
+            <div class="collapse-label">归集模式</div>
+            <div class="collapse-summary" id="editModeSummary">定额归集</div>
+          </div>
+        </div>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="collapse-body" id="editModeBody">
+        <div class="mode-options" id="editModeGroup">
+          <div class="mode-option selected" data-mode="fixed" onclick="selectEditMode('fixed')">
+            <div class="mode-option-title">定额归集</div>
+            <div class="mode-option-desc">每次归集固定金额</div>
+          </div>
+          <div class="mode-option" data-mode="full" onclick="selectEditMode('full')">
+            <div class="mode-option-title">全额归集</div>
+            <div class="mode-option-desc">将付款卡余额全部归集至收款卡</div>
+          </div>
+          <div class="mode-option" data-mode="balance" onclick="selectEditMode('balance')">
+            <div class="mode-option-title">定余额归集</div>
+            <div class="mode-option-desc">付款卡留存固定金额，超出部分归集</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 金额 -->
+    <div class="amount-card" id="editAmountCard">
+      <div class="amount-label" id="editAmountLabel">归集金额</div>
+      <div class="amount-input-row">
+        <span class="amount-unit">¥</span>
+        <input class="amount-input" id="editAmountInput" type="number" placeholder="0" value="1000">
+      </div>
+      <div class="amount-hint" id="editAmountHint">输入每期归集的固定金额</div>
+    </div>
+
+    <div class="amount-card hidden" id="editAmountHidden" style="text-align:center;padding:24px">
+      <div style="font-size:14px;color:var(--text-secondary)">付款卡余额将全额归集</div>
+    </div>
+
+    <div style="padding:0 16px">
+      <button class="btn btn-primary" onclick="saveEdit()">保存修改</button>
+      <div style="height:16px"></div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: PLAN DETAIL ==================== -->
+  <div class="screen" id="screen-detail">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="goScreen('list')">‹</button>
+      <span class="nav-title" id="detailTitle">计划详情</span>
+    </div>
+
+    <div class="detail-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="detail-name" id="detailName">日常资金归集</span>
+        <span class="plan-status status-active" id="detailStatus">执行中</span>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-row">
+        <span class="detail-key">付款卡</span>
+        <span class="detail-val" id="detailSource">储蓄卡 6217 **** 1234</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">收款卡</span>
+        <span class="detail-val">6222 **** 8899</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">归集模式</span>
+        <span class="detail-val" id="detailMode">全额归集</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">执行周期</span>
+        <span class="detail-val" id="detailCycle">每日</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">创建时间</span>
+        <span class="detail-val">2026-03-15</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">最近归集</span>
+        <span class="detail-val">2026-05-26 23:00</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">累计归集</span>
+        <span class="detail-val" style="color:var(--primary);font-size:16px">¥326,800.00</span>
+      </div>
+    </div>
+
+    <div class="detail-actions" id="detailActions">
+      <button class="btn btn-outline" id="btnPause" onclick="togglePlanStatus()" style="flex:1">⏸ 暂停归集</button>
+      <button class="btn btn-outline" id="btnModify" onclick="openEdit()" style="flex:1">✎ 修改计划</button>
+      <button class="btn btn-danger" id="btnDelete" onclick="showDeleteModal()" style="flex:1;display:none">删除计划</button>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN: RECORDS ==================== -->
+  <div class="screen" id="screen-records">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="goScreen('list')">‹</button>
+      <span class="nav-title">入金记录</span>
+    </div>
+
+    <!-- 本月统计 -->
+    <div class="records-stats">
+      <div class="stat-item">
+        <div class="stat-val">¥396,800</div>
+        <div class="stat-label">本月入金</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-val">15笔</div>
+        <div class="stat-label">总笔数</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-val">3笔</div>
+        <div class="stat-label">处理中</div>
+      </div>
+    </div>
+
+    <!-- 单笔转入记录 -->
+    <div class="records-date-group">
+      <div class="records-date">单笔转入</div>
+      <div id="singleRecordsList">
+        <div class="record-item">
+          <div class="record-left">
+            <div class="record-icon success">✓</div>
+            <div class="record-info">
+              <div class="record-flow">招商银行 <span class="record-arrow">→</span> 花花银行</div>
+              <div class="record-plan">单笔转入</div>
+            </div>
+          </div>
+          <div class="record-right">
+            <div class="record-amount">¥10,000.00</div>
+            <div class="record-status status-success">转入成功</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 归集记录 -->
+    <div class="records-date-group">
+      <div class="records-date">资金归集 — 2026-05-28 今天</div>
+      <div class="record-item">
+        <div class="record-left">
+          <div class="record-icon success">✓</div>
+          <div class="record-info">
+            <div class="record-flow">招商银行 <span class="record-arrow">→</span> 花花银行</div>
+            <div class="record-plan">日常资金归集</div>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="record-amount">¥23,500.00</div>
+          <div class="record-status status-success">归集成功</div>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="record-left">
+          <div class="record-icon pending">⟳</div>
+          <div class="record-info">
+            <div class="record-flow">工商银行 <span class="record-arrow">→</span> 花花银行</div>
+            <div class="record-plan">理财资金归集</div>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="record-amount">¥44,000.00</div>
+          <div class="record-status status-pending">处理中</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="records-date-group">
+      <div class="records-date">资金归集 — 2026-05-27 昨天</div>
+      <div class="record-item">
+        <div class="record-left">
+          <div class="record-icon success">✓</div>
+          <div class="record-info">
+            <div class="record-flow">平安银行 <span class="record-arrow">→</span> 花花银行</div>
+            <div class="record-plan">月底集中归集</div>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="record-amount">¥8,920.00</div>
+          <div class="record-status status-success">归集成功</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="records-date-group">
+      <div class="records-date">资金归集 — 2026-05-26 周一</div>
+      <div class="record-item">
+        <div class="record-left">
+          <div class="record-icon success">✓</div>
+          <div class="record-info">
+            <div class="record-flow">招商银行 <span class="record-arrow">→</span> 花花银行</div>
+            <div class="record-plan">日常资金归集</div>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="record-amount">¥23,500.00</div>
+          <div class="record-status status-success">归集成功</div>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="record-left">
+          <div class="record-icon fail">✕</div>
+          <div class="record-info">
+            <div class="record-flow">招商银行 <span class="record-arrow">→</span> 花花银行</div>
+            <div class="record-plan">日常资金归集</div>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="record-amount">¥23,500.00</div>
+          <div class="record-status status-fail">归集失败</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal" style="display:none" onclick="if(event.target===this)hideDeleteModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">确认删除</div>
+    <div class="modal-desc" id="deleteDesc">删除后不可恢复</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="hideDeleteModal()">取消</button>
+      <button class="btn btn-primary" onclick="deletePlan()" style="background:var(--primary)">确认删除</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// --- Tab Switching ---
+function switchTab(tab) {
+  lastTab = tab;
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'single') updateFlowDiagram();
+}
+
+// --- Single Transfer: Target Selection ---
+function selectSingleTarget(el) {
+  document.querySelectorAll('#singleTargetList .account-option').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  const name = el.dataset.name;
+  const no = el.dataset.no;
+  document.getElementById('singleTargetSummary').textContent = name + ' ' + no;
+  // Collapse after selection
+  document.getElementById('singleTargetHeader').classList.remove('open');
+  document.getElementById('singleTargetBody').classList.remove('open');
+  updateFlowDiagram();
+}
+
+// --- Single Transfer: Source Selection ---
+function selectSingleSource(el) {
+  document.querySelectorAll('#singleSourceList .account-option').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  const name = el.dataset.name;
+  const no = el.dataset.no;
+  document.getElementById('singleSourceSummary').textContent = name + ' ' + no;
+  // Collapse after selection
+  document.getElementById('singleSourceHeader').classList.remove('open');
+  document.getElementById('singleSourceBody').classList.remove('open');
+  updateFlowDiagram();
+}
+
+// --- Update Flow Diagram ---
+function updateFlowDiagram() {
+  const src = document.querySelector('#singleSourceList .account-option.selected');
+  const tgt = document.querySelector('#singleTargetList .account-option.selected');
+
+  if (src) {
+    const sName = src.dataset.name;
+    const sNo = src.dataset.no;
+    document.getElementById('flowSrcName').textContent = sName;
+    document.getElementById('flowSrcNo').textContent = sNo;
+    document.getElementById('flowSrcLogo').textContent = sName.charAt(0);
+    document.getElementById('flowSrcLogo').style.background = getBankColor(sName);
+  }
+
+  if (tgt) {
+    const tName = tgt.dataset.name;
+    const tNo = tgt.dataset.no;
+    document.getElementById('flowTgtName').textContent = tName;
+    document.getElementById('flowTgtNo').textContent = tNo;
+    document.getElementById('flowTgtLogo').textContent = tName.charAt(0);
+    document.getElementById('flowTgtLogo').style.background = '#c9463d';
+  }
+}
+
+// --- 日日盈 Toggle ---
+let dailyOn = false;
+function toggleDaily() {
+  dailyOn = !dailyOn;
+  document.getElementById('dailyToggle').classList.toggle('on', dailyOn);
+  document.getElementById('dailyExtra').classList.toggle('show', dailyOn);
+  document.getElementById('flowBubble').classList.toggle('show', dailyOn);
+  document.getElementById('dailyAgreementRow').classList.toggle('hidden', !dailyOn);
+
+  // Reset日日盈 agreement when toggling off
+  if (!dailyOn) {
+    dailyAgreementChecked = false;
+    document.getElementById('dailyAgreementCheck').classList.remove('checked');
+  }
+
+  const fee = document.getElementById('feeNotice');
+  if (dailyOn) {
+    fee.innerHTML = '<span>💰</span> 转入资金将自动申购日日盈，收益每日到账，随时可赎回 · 免手续费';
+  } else {
+    fee.innerHTML = '<span>✓</span> 推广期内跨行转入免手续费，资金实时到账';
+  }
+}
+let agreementChecked = false;
+function toggleAgreement() {
+  agreementChecked = !agreementChecked;
+  document.getElementById('agreementCheck').classList.toggle('checked', agreementChecked);
+}
+
+let dailyAgreementChecked = false;
+function toggleDailyAgreement() {
+  dailyAgreementChecked = !dailyAgreementChecked;
+  document.getElementById('dailyAgreementCheck').classList.toggle('checked', dailyAgreementChecked);
+}
+
+// --- Single Transfer: Amount Input ---
+function updateSingleAmount() {
+  const v = document.getElementById('singleAmount').value;
+  const hint = document.getElementById('singleAmountHint');
+  if (Number(v) > 50000) {
+    hint.textContent = '⚠ 超出单笔限额 ¥50,000';
+    hint.style.color = '#c9463d';
+  } else {
+    hint.textContent = '单笔限额 ¥50,000 · 每日限额 ¥200,000';
+    hint.style.color = '';
+  }
+}
+
+// --- Single Transfer: Confirm ---
+function confirmSingleTransfer() {
+  const src = document.querySelector('#singleSourceList .account-option.selected');
+  const tgt = document.querySelector('#singleTargetList .account-option.selected');
+  if (!src) { showToast('请选择付款卡', 'error'); return; }
+  if (!tgt) { showToast('请选择收款卡', 'error'); return; }
+
+  const amountEl = document.getElementById('singleAmount');
+  const amount = parseFloat(amountEl.value);
+  if (!amount || amount <= 0) { showToast('请输入转入金额', 'error'); return; }
+  if (amount > 50000) { showToast('超出单笔限额 ¥50,000', 'error'); return; }
+
+  const isSigned = src.dataset.signed === 'true';
+  if (!isSigned) {
+    showToast('该卡未签约超级网银，请先签约', 'error');
+    return;
+  }
+
+  if (!agreementChecked) {
+    showToast('请先阅读并同意《跨行收款协议》', 'error');
+    return;
+  }
+
+  if (dailyOn && !dailyAgreementChecked) {
+    showToast('请先阅读并同意《日日盈服务协议》', 'error');
+    return;
+  }
+
+  const sName = src.dataset.name;
+  const sNo = src.dataset.no.replace(/.*(\*+\d+)$/, '$1');
+  const tName = tgt.dataset.name;
+  const tNo = tgt.dataset.no.replace(/.*(\*+\d+)$/, '$1');
+
+  // 日日盈 result differentiation
+  const resultIcon = document.getElementById('singleResultIcon');
+  const resultTitle = document.getElementById('singleResultTitle');
+  const oneliner = document.getElementById('singleResultOneliner');
+  const balance = document.getElementById('singleResultBalance');
+  const btnDaily = document.getElementById('btnViewDaily');
+  const btnAgain = document.getElementById('btnSingleAgain');
+  const btnDone = document.getElementById('btnSingleDone');
+
+  const tgtBalance = tgt.dataset.balance || '¥0.00';
+
+  if (dailyOn) {
+    resultIcon.textContent = '💰';
+    resultIcon.style.background = 'linear-gradient(135deg, #f5d77a, #e8b730)';
+    resultIcon.style.color = '#fff';
+    resultTitle.textContent = '转入成功';
+    oneliner.textContent = sName + ' ' + sNo + ' → ' + tName + ' ' + tNo + ' · 免手续费 · 实时到账';
+    balance.textContent = '日日盈持仓 ' + amount.toLocaleString('zh-CN', {style: 'currency', currency: 'CNY'});
+    btnDaily.classList.remove('hidden');
+    btnDone.classList.add('hidden');
+    btnAgain.textContent = '完成';
+  } else {
+    resultIcon.textContent = '✓';
+    resultIcon.style.background = '#eafaf2';
+    resultIcon.style.color = '#16b864';
+    resultTitle.textContent = '转入成功';
+    oneliner.textContent = sName + ' ' + sNo + ' → ' + tName + ' ' + tNo + ' · 免手续费 · 实时到账';
+    balance.textContent = tName + '卡余额 ' + tgtBalance;
+    btnDaily.classList.add('hidden');
+    btnDone.classList.remove('hidden');
+    btnAgain.textContent = '继续转入';
+  }
+
+  document.getElementById('tab-single').classList.remove('active');
+  document.getElementById('tab-single-result').classList.add('active');
+  document.querySelector('.tab-bar').style.display = 'none';
+
+  // Reset for next time
+  agreementChecked = false;
+  document.getElementById('agreementCheck').classList.remove('checked');
+  dailyAgreementChecked = false;
+  document.getElementById('dailyAgreementCheck').classList.remove('checked');
+  const wasDaily = dailyOn;
+  if (dailyOn) {
+    dailyOn = false;
+    document.getElementById('dailyToggle').classList.remove('on');
+    document.getElementById('dailyExtra').classList.remove('show');
+    document.getElementById('dailyAgreementRow').classList.add('hidden');
+    document.getElementById('flowBubble').classList.remove('show');
+    document.getElementById('feeNotice').innerHTML = '<span>✓</span> 推广期内跨行转入免手续费，资金实时到账';
+  }
+
+  addSingleRecord(sName, amount, wasDaily);
+  showToast('转入成功', 'success');
+}
+
+function goBackFromResult() {
+  document.querySelector('.tab-bar').style.display = '';
+  switchTab('single');
+  document.getElementById('tab-single-result').classList.remove('active');
+  document.getElementById('tab-single').classList.add('active');
+  document.getElementById('singleAmount').value = '';
+  updateFlowDiagram();
+}
+
+function addSingleRecord(bankName, amount, wasDaily) {
+  const container = document.getElementById('singleRecordsList');
+  const item = document.createElement('div');
+  item.className = 'record-item';
+  const planText = wasDaily ? '单笔转入 <span style="color:#b8860b;font-weight:500">· 已申购日日盈</span>' : '单笔转入';
+  item.innerHTML = `
+    <div class="record-left">
+      <div class="record-icon success">✓</div>
+      <div class="record-info">
+        <div class="record-flow">${bankName} <span class="record-arrow">→</span> 花花银行</div>
+        <div class="record-plan">${planText}</div>
+      </div>
+    </div>
+    <div class="record-right">
+      <div class="record-amount">¥${amount.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</div>
+      <div class="record-status status-success">转入成功</div>
+    </div>`;
+  container.insertBefore(item, container.firstChild);
+}
+
+// --- Navigation ---
+let lastTab = 'single'; // remember last active tab
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('screen-' + name).scrollTop = 0;
+
+  // Ensure correct tab is visible when returning to list
+  if (name === 'list') {
+    switchTab(lastTab);
+  }
+}
+
+// --- Collapsible Sections ---
+function toggleCollapse(type) {
+  const header = document.getElementById(type + 'Header');
+  const body = document.getElementById(type + 'Body');
+  const isOpen = header.classList.contains('open');
+  if (isOpen) {
+    header.classList.remove('open');
+    body.classList.remove('open');
+  } else {
+    header.classList.add('open');
+    body.classList.add('open');
+  }
+}
+
+// --- Source Selection ---
+function selectSource(el, name, no) {
+  document.querySelectorAll('#sourceAccountList .account-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('sourceSummary').textContent = name + ' ' + no;
+}
+
+// --- Target Selection ---
+function selectTarget(el, name, no) {
+  document.querySelectorAll('#targetAccountList .account-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('targetSummary').textContent = name + ' ' + no;
+}
+
+// --- Rule Mode ---
+function selectMode(mode) {
+  document.querySelectorAll('#modeGroup .mode-option').forEach(p => p.classList.remove('selected'));
+  document.querySelector('#modeGroup [data-mode="'+mode+'"]').classList.add('selected');
+
+  // Collapse mode body after selection
+  document.getElementById('modeHeader').classList.remove('open');
+  document.getElementById('modeBody').classList.remove('open');
+
+  // Update summary
+  const titles = { fixed: '定额归集', full: '全额归集', balance: '定余额归集' };
+  const labels = { fixed: '归集金额', balance: '留存金额' };
+  const hints = { fixed: '输入每期归集的固定金额', balance: '付款卡留存该金额，超出部分归集' };
+
+  document.getElementById('modeSummary').textContent = titles[mode];
+
+  // Toggle amount card
+  const amountCard = document.getElementById('amountCard');
+  const amountHidden = document.getElementById('amountCardHidden');
+  const amountLabel = document.getElementById('amountLabel');
+  const amountHint = document.getElementById('amountHint');
+
+  if (mode === 'full') {
+    amountCard.classList.add('hidden');
+    amountHidden.classList.remove('hidden');
+  } else {
+    amountCard.classList.remove('hidden');
+    amountHidden.classList.add('hidden');
+    amountLabel.textContent = labels[mode] || '归集金额';
+    amountHint.textContent = hints[mode] || '';
+  }
+
+  updateRuleSummary();
+}
+
+// --- Rule Cycle (Step 1) ---
+function selectCycle1(cycle) {
+  document.querySelectorAll('#cycleGroupStep1 .pill').forEach(p => p.classList.remove('selected'));
+  document.querySelector('#cycleGroupStep1 [data-cycle="'+cycle+'"]').classList.add('selected');
+  document.getElementById('weekdayInput1').classList.toggle('hidden', cycle !== 'weekly');
+  document.getElementById('monthDayInput1').classList.toggle('hidden', cycle !== 'monthly');
+  document.getElementById('specificInput1').classList.toggle('hidden', cycle !== 'specific');
+}
+
+// --- Create Flow ---
+function goCreate() {
+  switchTab('pool'); // switch to pooling tab
+  document.querySelectorAll('#sourceAccountList .account-option').forEach((el,i) => el.classList.toggle('selected', i===0));
+  document.querySelectorAll('#targetAccountList .account-option').forEach((el,i) => el.classList.toggle('selected', i===0));
+  document.getElementById('sourceSummary').textContent = '花花银行 借记卡 6217 **** 3456';
+  document.getElementById('targetSummary').textContent = '花花银行 6222 **** 8899';
+  document.getElementById('planNameInput').value = '我的归集计划';
+  // Reset周期 to default: 每日
+  selectCycle1('daily');
+  // Reset mode to default: 定额
+  selectMode('fixed');
+  document.getElementById('amountInput').value = '1000';
+  // Collapse mode
+  document.getElementById('modeHeader').classList.remove('open');
+  document.getElementById('modeBody').classList.remove('open');
+  // 默认折叠
+  ['source','target'].forEach(t => {
+    document.getElementById(t+'Header').classList.remove('open');
+    document.getElementById(t+'Body').classList.remove('open');
+  });
+  goScreen('create-step1');
+}
+
+function goCreateStep2() {
+  const src = document.querySelector('#sourceAccountList .account-option.selected');
+  const tgt = document.querySelector('#targetAccountList .account-option.selected');
+  if (!src) { showToast('请选择付款卡','error'); return; }
+  if (!tgt) { showToast('请选择收款卡','error'); return; }
+
+  // Populate bank flow header
+  const sName = src.querySelector('.account-opt-name').textContent;
+  const sNo = src.querySelector('.account-opt-no').textContent;
+  const tName = tgt.querySelector('.account-opt-name').textContent;
+  const tNo = tgt.querySelector('.account-opt-no').textContent;
+  const sShort = sNo.replace(/.*(\*+\d+)$/, '$1');
+
+  document.getElementById('flowSourceName').textContent = sName;
+  document.getElementById('flowSourceNo').textContent = sShort;
+  document.getElementById('sourceLogo').textContent = sName.charAt(0);
+  document.getElementById('sourceLogo').style.background = getBankColor(sName);
+
+  document.getElementById('flowTargetName').textContent = tName;
+  document.getElementById('flowTargetNo').textContent = tNo.replace(/.*(\*+\d+)$/, '$1');
+  document.getElementById('targetLogo').textContent = tName.charAt(0);
+  document.getElementById('targetLogo').style.background = '#c9463d';
+
+  // Populate cycle tag
+  const c1 = document.querySelector('#cycleGroupStep1 .pill.selected');
+  let cycleTagText = c1.textContent;
+  if (c1.dataset.cycle === 'weekly') {
+    cycleTagText += ' ' + document.getElementById('cycleWeekday1').value;
+  } else if (c1.dataset.cycle === 'monthly') {
+    cycleTagText += ' ' + document.getElementById('cycleMonthDay1').value;
+  } else if (c1.dataset.cycle === 'specific') {
+    cycleTagText = document.getElementById('cycleSpecific1').value || '指定日期';
+  }
+  document.getElementById('flowCycleTag').textContent = cycleTagText;
+
+  // Check if付款卡 is他行
+  const isOtherBank = src.dataset.bank === 'other';
+  document.getElementById('restrictNotice').classList.toggle('hidden', !isOtherBank);
+
+  // Enable/disable modes based on bank type
+  const fullOpt = document.querySelector('#modeGroup [data-mode="full"]');
+  const balanceOpt = document.querySelector('#modeGroup [data-mode="balance"]');
+  fullOpt.classList.toggle('disabled', isOtherBank);
+  balanceOpt.classList.toggle('disabled', isOtherBank);
+
+  // If他行 and current mode is not fixed, force to fixed
+  if (isOtherBank) {
+    const cur = document.querySelector('#modeGroup .mode-option.selected');
+    if (cur.dataset.mode !== 'fixed') selectMode('fixed');
+  }
+
+  // Collapse mode by default
+  document.getElementById('modeHeader').classList.remove('open');
+  document.getElementById('modeBody').classList.remove('open');
+
+  updateRuleSummary();
+  goScreen('create-step2');
+}
+
+function getBankColor(name) {
+  const map = { '招商银行': '#d44037', '平安银行': '#e87417', '工商银行': '#c9392e', '花花银行': '#c9463d' };
+  return map[name] || '#c9463d';
+}
+
+function updateRuleSummary() {
+  const src = document.querySelector('#sourceAccountList .account-option.selected');
+  const tgt = document.querySelector('#targetAccountList .account-option.selected');
+  const sName = src ? src.querySelector('.account-opt-name').textContent : '未选择';
+  const tName = tgt ? tgt.querySelector('.account-opt-name').textContent : '未选择';
+
+  // Mode from step2
+  const m = document.querySelector('#modeGroup .mode-option.selected');
+  let modeText = m.querySelector('.mode-option-title').textContent;
+  if (m.dataset.mode !== 'full') modeText += ' ¥' + document.getElementById('amountInput').value;
+
+  // Cycle from step1
+  const c = document.querySelector('#cycleGroupStep1 .pill.selected');
+  let cycleText = c.textContent;
+  if (c.dataset.cycle === 'weekly') {
+    cycleText += ' ' + document.getElementById('cycleWeekday1').value;
+  } else if (c.dataset.cycle === 'monthly') {
+    cycleText += ' ' + document.getElementById('cycleMonthDay1').value;
+  } else if (c.dataset.cycle === 'specific') {
+    cycleText += ' ' + (document.getElementById('cycleSpecific1').value || '未指定');
+  }
+
+  document.getElementById('ruleSummary').innerHTML = sName + ' → ' + tName + '<br>' + modeText + ' · ' + cycleText;
+}
+
+document.addEventListener('input', updateRuleSummary);
+document.addEventListener('change', updateRuleSummary);
+
+function confirmCreate() {
+  const src = document.querySelector('#sourceAccountList .account-option.selected');
+  const tgt = document.querySelector('#targetAccountList .account-option.selected');
+  const sName = src.querySelector('.account-opt-name').textContent;
+  const sNo = src.querySelector('.account-opt-no').textContent;
+  const tName = tgt.querySelector('.account-opt-name').textContent;
+  const tNo = tgt.querySelector('.account-opt-no').textContent;
+  const planName = document.getElementById('planNameInput').value || '未命名计划';
+
+  // Build mode text from step2
+  const m = document.querySelector('#modeGroup .mode-option.selected');
+  let modeText = m.querySelector('.mode-option-title').textContent;
+  if (m.dataset.mode !== 'full') modeText += ' ¥' + document.getElementById('amountInput').value;
+
+  // Build cycle text from step1
+  const c = document.querySelector('#cycleGroupStep1 .pill.selected');
+  let cycleText = c.textContent;
+  if (c.dataset.cycle === 'weekly') {
+    cycleText += ' ' + document.getElementById('cycleWeekday1').value;
+  } else if (c.dataset.cycle === 'monthly') {
+    cycleText += ' ' + document.getElementById('cycleMonthDay1').value;
+  } else if (c.dataset.cycle === 'specific') {
+    cycleText += ' ' + (document.getElementById('cycleSpecific1').value || '未指定');
+  }
+
+  // Populate result page
+  document.getElementById('resultName').textContent = planName;
+  document.getElementById('resultFlow').textContent = sName + ' → ' + tName;
+  document.getElementById('resultMode').textContent = modeText;
+  document.getElementById('resultCycle').textContent = cycleText;
+
+  addPlanToList(planName, sName, sNo, tName, tNo, modeText, cycleText);
+  goScreen('result');
+}
+
+function finishCreate() {
+  goScreen('list');
+}
+
+// --- Edit Flow ---
+function selectEditCycle(cycle) {
+  document.querySelectorAll('#editCycleGroup .pill').forEach(p => p.classList.remove('selected'));
+  document.querySelector('#editCycleGroup [data-cycle="'+cycle+'"]').classList.add('selected');
+  document.getElementById('editWeekdayInput').classList.toggle('hidden', cycle !== 'weekly');
+  document.getElementById('editMonthDayInput').classList.toggle('hidden', cycle !== 'monthly');
+  document.getElementById('editSpecificInput').classList.toggle('hidden', cycle !== 'specific');
+}
+
+function selectEditMode(mode) {
+  document.querySelectorAll('#editModeGroup .mode-option').forEach(p => p.classList.remove('selected'));
+  document.querySelector('#editModeGroup [data-mode="'+mode+'"]').classList.add('selected');
+  document.getElementById('editModeHeader').classList.remove('open');
+  document.getElementById('editModeBody').classList.remove('open');
+
+  const titles = { fixed: '定额归集', full: '全额归集', balance: '定余额归集' };
+  const labels = { fixed: '归集金额', balance: '留存金额' };
+  const hints = { fixed: '输入每期归集的固定金额', balance: '付款卡留存该金额，超出部分归集' };
+  document.getElementById('editModeSummary').textContent = titles[mode];
+
+  if (mode === 'full') {
+    document.getElementById('editAmountCard').classList.add('hidden');
+    document.getElementById('editAmountHidden').classList.remove('hidden');
+  } else {
+    document.getElementById('editAmountCard').classList.remove('hidden');
+    document.getElementById('editAmountHidden').classList.add('hidden');
+    document.getElementById('editAmountLabel').textContent = labels[mode] || '归集金额';
+    document.getElementById('editAmountHint').textContent = hints[mode] || '';
+  }
+}
+
+function openEdit() {
+  const card = document.querySelector(`[data-plan-id="${currentDetailPlanId}"]`);
+  if (!card) return;
+
+  // Read current plan data from card
+  const planName = card.querySelector('.plan-name').textContent;
+  const rules = card.querySelectorAll('.plan-rule-row span');
+  const modeText = rules[0].textContent;
+  const cycleText = rules[1].textContent;
+
+  // Set plan name
+  document.getElementById('editPlanName').value = planName;
+
+  // Parse and set mode
+  let mode = 'fixed', amount = '1000';
+  if (modeText.includes('全额')) { mode = 'full'; }
+  else if (modeText.includes('定余额')) { mode = 'balance'; }
+  if (mode !== 'full') {
+    const m = modeText.match(/¥([\d,]+)/);
+    if (m) amount = m[1].replace(/,/g, '');
+  }
+  selectEditMode(mode);
+  document.getElementById('editAmountInput').value = amount;
+  document.getElementById('editModeHeader').classList.remove('open');
+  document.getElementById('editModeBody').classList.remove('open');
+
+  // Parse and set cycle
+  let cycle = 'daily';
+  if (cycleText.includes('指定日期') || /^\d{4}-\d{2}-\d{2}$/.test(cycleText)) {
+    cycle = 'specific';
+  } else if (cycleText.includes('每周')) {
+    cycle = 'weekly';
+  } else if (cycleText.includes('每月')) {
+    cycle = 'monthly';
+  }
+  selectEditCycle(cycle);
+
+  // Set cycle detail values
+  if (cycle === 'weekly') {
+    const days = ['周一','周二','周三','周四','周五','周六','周日'];
+    for (const d of days) {
+      if (cycleText.includes(d)) { document.getElementById('editWeekday').value = d; break; }
+    }
+  } else if (cycle === 'monthly') {
+    const m = cycleText.match(/(\d+)日/);
+    if (m) {
+      const val = m[1] + '日';
+      const opts = document.getElementById('editMonthDay').options;
+      for (const o of opts) { if (o.value === val) { o.selected = true; break; } }
+    }
+  } else if (cycle === 'specific') {
+    const m = cycleText.match(/(\d{4}-\d{2}-\d{2})/);
+    if (m) document.getElementById('editSpecific').value = m[1];
+  }
+
+  goScreen('edit');
+}
+
+function saveEdit() {
+  const card = document.querySelector(`[data-plan-id="${currentDetailPlanId}"]`);
+  if (!card) return;
+
+  const planName = document.getElementById('editPlanName').value || '未命名计划';
+
+  // Build mode text
+  const modeEl = document.querySelector('#editModeGroup .mode-option.selected');
+  let modeText = modeEl.querySelector('.mode-option-title').textContent;
+  const amount = document.getElementById('editAmountInput').value;
+  if (modeEl.dataset.mode !== 'full') modeText += ' ¥' + amount;
+
+  // Build cycle text
+  const cycleEl = document.querySelector('#editCycleGroup .pill.selected');
+  let cycleText = cycleEl.textContent;
+  if (cycleEl.dataset.cycle === 'weekly') {
+    cycleText += ' ' + document.getElementById('editWeekday').value;
+  } else if (cycleEl.dataset.cycle === 'monthly') {
+    cycleText += ' ' + document.getElementById('editMonthDay').value;
+  } else if (cycleEl.dataset.cycle === 'specific') {
+    cycleText += ' ' + (document.getElementById('editSpecific').value || '未指定');
+  }
+
+  // Update card in list
+  card.querySelector('.plan-name').textContent = planName;
+  const ruleSpans = card.querySelectorAll('.plan-rule-row span');
+  if (ruleSpans.length >= 2) {
+    ruleSpans[0].textContent = modeText;
+    ruleSpans[1].textContent = cycleText;
+  }
+
+  // Refresh detail page
+  openDetail(currentDetailPlanId);
+  showToast('修改已保存', 'success');
+}
+
+function addPlanToList(name, sName, sNo, tName, tNo, modeText, cycleText) {
+  const now = new Date();
+  const ds = now.getFullYear()+'/'+('0'+(now.getMonth()+1)).slice(-2)+'/'+('0'+now.getDate()).slice(-2);
+  const planId = 'plan_' + Date.now();
+  const sShort = sNo.replace(/.*(\*+\d+)$/, '$1');
+  const tShort = tNo.replace(/.*(\*+\d+)$/, '$1');
+  const card = document.createElement('div');
+  card.className = 'plan-card';
+  card.setAttribute('data-plan-id', planId);
+  card.setAttribute('onclick',"openDetail('"+planId+"')");
+  card.innerHTML = `
+    <div class="plan-top">
+      <span class="plan-name">${name}</span>
+      <span class="plan-status status-active">执行中</span>
+    </div>
+    <div class="plan-flow-line">
+      <span class="flow-bank">${sName}</span><span class="flow-card-no">${sShort}</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-bank">${tName}</span><span class="flow-card-no">${tShort}</span>
+    </div>
+    <div class="plan-pool-label">上次归集金额</div>
+    <div class="plan-pool-amount">--</div>
+    <div class="plan-rule-row">
+      <span>${modeText}</span><span class="rule-dot"></span>
+      <span>${cycleText}</span><span class="rule-dot"></span>
+      <span>创建于 ${ds}</span>
+    </div>`;
+  document.getElementById('activePlans').appendChild(card);
+  updatePlanCounts();
+}
+
+// --- Detail ---
+let currentDetailPlanId = 'plan1';
+
+function openDetail(planId) {
+  currentDetailPlanId = planId;
+  // 从列表卡片读取当前状态
+  const card = document.querySelector(`[data-plan-id="${planId}"]`);
+  const cardName = card ? card.querySelector('.plan-name').textContent : '未知计划';
+  const cardStatus = card ? card.querySelector('.plan-status').textContent.trim() : '执行中';
+  const banks = card ? card.querySelectorAll('.plan-flow-line .flow-bank') : [];
+  const nos = card ? card.querySelectorAll('.plan-flow-line .flow-card-no') : [];
+  const cardSource = banks.length > 0 ? banks[0].textContent + ' ' + nos[0].textContent : '';
+  const cardRules = card ? card.querySelectorAll('.plan-rule-row span') : [];
+  const cardMode = cardRules.length > 0 ? cardRules[0].textContent : '';
+  const cardCycle = cardRules.length > 1 ? cardRules[1].textContent : '';
+
+  const isPaused = cardStatus === '已暂停';
+
+  document.getElementById('detailName').textContent = cardName;
+  document.getElementById('detailSource').textContent = cardSource;
+  document.getElementById('detailMode').textContent = cardMode;
+  document.getElementById('detailCycle').textContent = cardCycle;
+  document.getElementById('detailStatus').textContent = cardStatus;
+  document.getElementById('detailStatus').className = 'plan-status ' + (isPaused ? 'status-paused' : 'status-active');
+
+  // 按钮显隐：执行中→暂停+修改，已暂停→恢复+删除
+  document.getElementById('btnPause').textContent = isPaused ? '▶ 恢复归集' : '⏸ 暂停归集';
+  document.getElementById('btnPause').className = 'btn ' + (isPaused ? 'btn-primary' : 'btn-outline');
+  document.getElementById('btnPause').style.display = '';
+  document.getElementById('btnModify').style.display = isPaused ? 'none' : '';
+  document.getElementById('btnDelete').style.display = isPaused ? '' : 'none';
+  goScreen('detail');
+}
+
+function togglePlanStatus() {
+  const detailSt = document.getElementById('detailStatus');
+  const detailBtn = document.getElementById('btnPause');
+  const card = document.querySelector(`[data-plan-id="${currentDetailPlanId}"]`);
+  const isPaused = detailSt.textContent === '已暂停';
+
+  if (isPaused) {
+    // 恢复：移到执行中，显示暂停+修改
+    detailSt.textContent = '执行中'; detailSt.className = 'plan-status status-active';
+    detailBtn.textContent = '⏸ 暂停归集'; detailBtn.className = 'btn btn-outline';
+    document.getElementById('btnModify').style.display = '';
+    document.getElementById('btnDelete').style.display = 'none';
+    if (card) {
+      card.querySelector('.plan-status').textContent = '执行中';
+      card.querySelector('.plan-status').className = 'plan-status status-active';
+      card.style.opacity = '1';
+      document.getElementById('activePlans').appendChild(card);
+    }
+    showToast('归集计划已恢复','success');
+  } else {
+    // 暂停：移到已暂停，显示恢复+删除
+    detailSt.textContent = '已暂停'; detailSt.className = 'plan-status status-paused';
+    detailBtn.textContent = '▶ 恢复归集'; detailBtn.className = 'btn btn-primary';
+    document.getElementById('btnModify').style.display = 'none';
+    document.getElementById('btnDelete').style.display = '';
+    if (card) {
+      card.querySelector('.plan-status').textContent = '已暂停';
+      card.querySelector('.plan-status').className = 'plan-status status-paused';
+      card.style.opacity = '0.65';
+      document.getElementById('pausedPlans').appendChild(card);
+    }
+    showToast('归集计划已暂停','success');
+  }
+  updatePlanCounts();
+}
+
+function showDeleteModal() {
+  document.getElementById('deleteDesc').innerHTML = '删除「'+document.getElementById('detailName').textContent+'」归集计划？<br>删除后不可恢复';
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+function hideDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; }
+function deletePlan() {
+  hideDeleteModal();
+  const card = document.querySelector(`[data-plan-id="${currentDetailPlanId}"]`);
+  if (card) card.remove();
+  goScreen('list');
+  updatePlanCounts();
+  showToast('归集计划已删除','success');
+}
+
+function updatePlanCounts() {
+  const ac = document.getElementById('activePlans').children.length;
+  const pc = document.getElementById('pausedPlans').children.length;
+  document.getElementById('activeCount').textContent = ac + '个计划';
+  document.getElementById('pausedCount').textContent = pc + '个计划';
+  const total = ac + pc;
+  document.getElementById('emptyState').classList.toggle('hidden', total > 0);
+  document.getElementById('addBtnArea').classList.toggle('hidden', total === 0);
+}
+
+function showToast(msg, type) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast toast-'+type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+</script>
+</body>
+</html>
